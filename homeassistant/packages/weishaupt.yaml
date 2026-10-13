@@ -1,0 +1,689 @@
+# Weishaupt WTC-OB über eBUS (ebusd) – Home-Assistant-Package
+# Projekt: https://github.com/B-o-r-i-s-M/Weishaupt-WTC-OB-ebusd-Home-Assistant
+#
+# Ablage: <config>/packages/weishaupt.yaml
+# Voraussetzung in configuration.yaml:
+#   homeassistant:
+#     packages: !include_dir_named packages
+# Benötigt Home Assistant 2025.10 oder neuer (default_entity_id, neue Trigger-Syntax)
+# sowie die MQTT-Integration und die ebusd-App mit ebusd/weishaupt-wtc.csv.
+#
+# Datenquelle: ebusd veröffentlicht jeden Wert unter ebusd/<circuit>/<name>
+#   als JSON {"0": {"name": "", "value": ...}}  (ebusd-Option --mqttjson)
+#   wtc = Kessel (eBUS-Slave 08), hk1 = Heizkreis/WCM-FS (35), regler = Broadcast 05 07 des WCM-FS
+# 32768 (0x8000) bedeutet beim Kessel "nicht verfügbar" und wird als unbekannt angezeigt.
+#
+# Tipp: Wer vorher eine REST-Abfrage des WCM-COM mit denselben Entitäts-IDs hatte, entfernt erst die
+# alten REST-Entitäten aus der Registry; dann übernehmen diese Sensoren die IDs samt Verlauf/Statistik.
+
+mqtt:
+  sensor:
+    - name: "Weishaupt Vorlauftemperatur"
+      unique_id: weishaupt_ebus_vorlauftemperatur
+      default_entity_id: sensor.weishaupt_vorlauftemperatur
+      state_topic: ebusd/wtc/Vorlauftemp
+      value_template: "{{ none if value_json['0'].value in [none, 32768] else value_json['0'].value }}"
+      unit_of_measurement: "°C"
+      device_class: temperature
+      state_class: measurement
+    - name: "Weishaupt Warmwassertemperatur"
+      unique_id: weishaupt_ebus_warmwassertemperatur
+      default_entity_id: sensor.weishaupt_warmwassertemperatur
+      state_topic: ebusd/wtc/Warmwassertemp
+      value_template: "{{ none if value_json['0'].value in [none, 32768] else value_json['0'].value }}"
+      unit_of_measurement: "°C"
+      device_class: temperature
+      state_class: measurement
+    - name: "Weishaupt Kesseltemperatur"
+      unique_id: weishaupt_ebus_kesseltemperatur
+      default_entity_id: sensor.weishaupt_kesseltemperatur
+      state_topic: ebusd/wtc/Kesseltemp
+      value_template: "{{ none if value_json['0'].value in [none, 32768] else value_json['0'].value }}"
+      unit_of_measurement: "°C"
+      device_class: temperature
+      state_class: measurement
+    - name: "Weishaupt Außentemperatur"
+      unique_id: weishaupt_ebus_aussentemperatur
+      default_entity_id: sensor.weishaupt_aussentemperatur
+      state_topic: ebusd/wtc/Aussentemp
+      value_template: "{{ none if value_json['0'].value in [none, 32768] else value_json['0'].value }}"
+      unit_of_measurement: "°C"
+      device_class: temperature
+      state_class: measurement
+    - name: "Weishaupt Außentemperatur gedämpft"
+      unique_id: weishaupt_ebus_aussentemperatur_gedaempft
+      default_entity_id: sensor.weishaupt_aussentemperatur_gedaempft
+      state_topic: ebusd/wtc/AussentempGedaempft
+      value_template: "{{ none if value_json['0'].value in [none, 32768] else value_json['0'].value }}"
+      unit_of_measurement: "°C"
+      device_class: temperature
+      state_class: measurement
+    - name: "Weishaupt Abgastemperatur"
+      unique_id: weishaupt_ebus_abgastemperatur
+      default_entity_id: sensor.weishaupt_abgastemperatur
+      state_topic: ebusd/wtc/Abgastemp
+      value_template: "{{ none if value_json['0'].value in [none, 32768] else value_json['0'].value }}"
+      unit_of_measurement: "°C"
+      device_class: temperature
+      state_class: measurement
+    - name: "Weishaupt Wärmeanforderung"
+      unique_id: weishaupt_ebus_warmeanforderung
+      default_entity_id: sensor.weishaupt_warmeanforderung
+      state_topic: ebusd/wtc/Waermeanforderung
+      value_template: "{{ none if value_json['0'].value in [none, 32768] else value_json['0'].value }}"
+      unit_of_measurement: "°C"
+      device_class: temperature
+      state_class: measurement
+    - name: "Weishaupt Betriebsphase"
+      unique_id: weishaupt_ebus_betriebsphase
+      default_entity_id: sensor.weishaupt_betriebsphase
+      state_topic: ebusd/wtc/Betriebsphase
+      value_template: "{{ none if value_json['0'].value in [none, 32768] else value_json['0'].value }}"
+      state_class: measurement
+      icon: mdi:progress-clock
+      expire_after: 600
+    - name: "Weishaupt Laststellung"
+      unique_id: weishaupt_ebus_laststellung
+      default_entity_id: sensor.weishaupt_laststellung
+      state_topic: ebusd/wtc/Laststellung
+      value_template: "{{ none if value_json['0'].value in [none, 32768] else value_json['0'].value }}"
+      unit_of_measurement: "kW"
+      device_class: power
+      state_class: measurement
+      expire_after: 600
+    - name: "Weishaupt Störung"
+      unique_id: weishaupt_ebus_stoerung
+      default_entity_id: sensor.weishaupt_stoerung
+      state_topic: ebusd/wtc/Stoerung
+      value_template: "{{ none if value_json['0'].value in [none, 32768] else value_json['0'].value }}"
+      icon: mdi:alert-circle-outline
+    - name: "Weishaupt Zeit seit Wartung"
+      unique_id: weishaupt_ebus_zeit_seit_wartung
+      default_entity_id: sensor.weishaupt_zeit_seit_wartung
+      state_topic: ebusd/wtc/ZeitSeitWartung
+      value_template: "{{ none if value_json['0'].value in [none, 32768] else value_json['0'].value }}"
+      icon: mdi:wrench-clock
+    - name: "Weishaupt Ölzähler Tausender"
+      unique_id: weishaupt_ebus_oel_tausender
+      default_entity_id: sensor.weishaupt_oel_tausender
+      state_topic: ebusd/wtc/OelzaehlerTausender
+      value_template: "{{ none if value_json['0'].value in [none, 32768] else value_json['0'].value }}"
+      icon: mdi:counter
+    - name: "Weishaupt Ölzähler Rest"
+      unique_id: weishaupt_ebus_oel_rest
+      default_entity_id: sensor.weishaupt_oel_rest
+      state_topic: ebusd/wtc/OelzaehlerRest
+      value_template: "{{ none if value_json['0'].value in [none, 32768] else value_json['0'].value }}"
+      icon: mdi:counter
+    - name: "Weishaupt Betriebsstunden Tausender"
+      unique_id: weishaupt_ebus_bstd_tausender
+      default_entity_id: sensor.weishaupt_bstd_tausender
+      state_topic: ebusd/wtc/BetriebsstundenTausender
+      value_template: "{{ none if value_json['0'].value in [none, 32768] else value_json['0'].value }}"
+      icon: mdi:counter
+    - name: "Weishaupt Betriebsstunden Rest"
+      unique_id: weishaupt_ebus_bstd_rest
+      default_entity_id: sensor.weishaupt_bstd_rest
+      state_topic: ebusd/wtc/BetriebsstundenRest
+      value_template: "{{ none if value_json['0'].value in [none, 32768] else value_json['0'].value }}"
+      icon: mdi:counter
+    - name: "Weishaupt Brennerstarts Tausender"
+      unique_id: weishaupt_ebus_starts_tausender
+      default_entity_id: sensor.weishaupt_starts_tausender
+      state_topic: ebusd/wtc/BrennerstartsTausender
+      value_template: "{{ none if value_json['0'].value in [none, 32768] else value_json['0'].value }}"
+      icon: mdi:counter
+    - name: "Weishaupt Brennerstarts Rest"
+      unique_id: weishaupt_ebus_starts_rest
+      default_entity_id: sensor.weishaupt_starts_rest
+      state_topic: ebusd/wtc/BrennerstartsRest
+      value_template: "{{ none if value_json['0'].value in [none, 32768] else value_json['0'].value }}"
+      icon: mdi:counter
+    - name: "Weishaupt HK1 Normal-Raumtemperatur"
+      unique_id: weishaupt_ebus_hk1_raumsoll
+      default_entity_id: sensor.weishaupt_hk1_raumsoll
+      state_topic: ebusd/hk1/Raumsoll
+      value_template: "{{ none if value_json['0'].value in [none, 32768] else value_json['0'].value }}"
+      unit_of_measurement: "°C"
+      device_class: temperature
+    - name: "Weishaupt HK1 Absenk-Raumtemperatur"
+      unique_id: weishaupt_ebus_hk1_raumsoll_absenk
+      default_entity_id: sensor.weishaupt_hk1_raumsoll_absenk
+      state_topic: ebusd/hk1/RaumsollAbsenk
+      value_template: "{{ none if value_json['0'].value in [none, 32768] else value_json['0'].value }}"
+      unit_of_measurement: "°C"
+      device_class: temperature
+    - name: "Weishaupt HK1 Steilheit"
+      unique_id: weishaupt_ebus_hk1_steilheit
+      default_entity_id: sensor.weishaupt_hk1_steilheit
+      state_topic: ebusd/hk1/Steilheit
+      value_template: "{{ none if value_json['0'].value in [none, 32768] else value_json['0'].value }}"
+      icon: mdi:chart-line
+    - name: "Weishaupt HK1 Raumfrosttemperatur"
+      unique_id: weishaupt_ebus_hk1_raumfrost
+      default_entity_id: sensor.weishaupt_hk1_raumfrost
+      state_topic: ebusd/hk1/Raumfrosttemp
+      value_template: "{{ none if value_json['0'].value in [none, 32768] else value_json['0'].value }}"
+      unit_of_measurement: "°C"
+      device_class: temperature
+    - name: "Weishaupt HK1 Sommer/Winter-Umschaltung"
+      unique_id: weishaupt_ebus_hk1_sowi
+      default_entity_id: sensor.weishaupt_hk1_sowi
+      state_topic: ebusd/hk1/SoWiUmschalt
+      value_template: "{{ none if value_json['0'].value in [none, 32768] else value_json['0'].value }}"
+      unit_of_measurement: "°C"
+      device_class: temperature
+    - name: "Weishaupt HK1 Warmwasser-Soll"
+      unique_id: weishaupt_ebus_hk1_ww_soll
+      default_entity_id: sensor.weishaupt_hk1_ww_soll
+      state_topic: ebusd/hk1/WWSollNormal
+      value_template: "{{ none if value_json['0'].value in [none, 32768] else value_json['0'].value }}"
+      unit_of_measurement: "°C"
+      device_class: temperature
+    - name: "Weishaupt HK1 Warmwasser-Soll abgesenkt"
+      unique_id: weishaupt_ebus_hk1_ww_soll_absenk
+      default_entity_id: sensor.weishaupt_hk1_ww_soll_absenk
+      state_topic: ebusd/hk1/WWSollAbsenk
+      value_template: "{{ none if value_json['0'].value in [none, 32768] else value_json['0'].value }}"
+      unit_of_measurement: "°C"
+      device_class: temperature
+    - name: "Weishaupt HK1 Vorlauf-Soll"
+      unique_id: weishaupt_ebus_hk1_vorlauf_soll
+      default_entity_id: sensor.weishaupt_hk1_vorlauf_soll
+      state_topic: ebusd/hk1/Vorlaufsoll
+      value_template: "{{ none if value_json['0'].value in [none, 32768] else value_json['0'].value }}"
+      unit_of_measurement: "°C"
+      device_class: temperature
+      state_class: measurement
+    # Broadcast des WCM-FS an den Kessel (alle ca. 10 s, ohne Abfrage)
+    - name: "Weishaupt Kesselsollwert Regler"
+      unique_id: weishaupt_ebus_regler_kesselsoll
+      default_entity_id: sensor.weishaupt_regler_kesselsoll
+      state_topic: ebusd/regler/Betriebsdaten
+      value_template: "{{ value_json.Kesselsollwert.value }}"
+      unit_of_measurement: "°C"
+      device_class: temperature
+      state_class: measurement
+    - name: "Weishaupt Warmwassersollwert Regler"
+      unique_id: weishaupt_ebus_regler_wwsoll
+      default_entity_id: sensor.weishaupt_regler_wwsoll
+      state_topic: ebusd/regler/Betriebsdaten
+      value_template: "{{ value_json.WWSollwert.value }}"
+      unit_of_measurement: "°C"
+      device_class: temperature
+      state_class: measurement
+
+  binary_sensor:
+    - name: "Weishaupt Flamme"
+      unique_id: weishaupt_ebus_flamme
+      default_entity_id: binary_sensor.weishaupt_flamme
+      state_topic: ebusd/wtc/Flamme
+      value_template: "{{ 'ON' if (value_json['0'].value | int(0)) == 1 else 'OFF' }}"
+      icon: mdi:fire
+      expire_after: 600
+    - name: "Weishaupt Magnetventil 1"
+      unique_id: weishaupt_ebus_magnetventil_1
+      default_entity_id: binary_sensor.weishaupt_magnetventil_1
+      state_topic: ebusd/wtc/Magnetventil1
+      value_template: "{{ 'ON' if (value_json['0'].value | int(0)) == 1 else 'OFF' }}"
+      icon: mdi:valve
+      expire_after: 600
+    - name: "Weishaupt Magnetventil 2"
+      unique_id: weishaupt_ebus_magnetventil_2
+      default_entity_id: binary_sensor.weishaupt_magnetventil_2
+      state_topic: ebusd/wtc/Magnetventil2
+      value_template: "{{ 'ON' if (value_json['0'].value | int(0)) == 1 else 'OFF' }}"
+      icon: mdi:valve
+      expire_after: 600
+    - name: "Weishaupt Pumpe"
+      unique_id: weishaupt_ebus_pumpe
+      default_entity_id: binary_sensor.weishaupt_pumpe
+      state_topic: ebusd/wtc/Pumpe
+      value_template: "{{ 'ON' if (value_json['0'].value | int(0)) == 1 else 'OFF' }}"
+      icon: mdi:pump
+      expire_after: 600
+    - name: "Weishaupt Heizung"
+      unique_id: weishaupt_ebus_heizung
+      default_entity_id: binary_sensor.weishaupt_heizung
+      state_topic: ebusd/wtc/BetriebsartHeizung
+      value_template: "{{ 'ON' if (value_json['0'].value | int(0)) == 1 else 'OFF' }}"
+      icon: mdi:radiator
+      expire_after: 600
+    - name: "Weishaupt Warmwasser"
+      unique_id: weishaupt_ebus_warmwasser
+      default_entity_id: binary_sensor.weishaupt_warmwasser
+      state_topic: ebusd/wtc/BetriebsartWarmwasser
+      value_template: "{{ 'ON' if (value_json['0'].value | int(0)) == 1 else 'OFF' }}"
+      icon: mdi:water-boiler
+      expire_after: 600
+
+
+# --- Zähler pro Tag / Monat / Jahr (Öl und Starts aus Gerätezählern) ---
+# Hinweis: Öl zählt das Gerät in ganzen Litern, Tageswerte springen daher.
+# Jeder Zähler zeigt "Unbekannt", bis sich sein Quellwert das erste Mal ändert.
+utility_meter:
+  weishaupt_oel_tag:
+    source: sensor.weishaupt_olzahler
+    cycle: daily
+    unique_id: weishaupt_oel_tag
+  weishaupt_oel_monat:
+    source: sensor.weishaupt_olzahler
+    cycle: monthly
+    unique_id: weishaupt_oel_monat
+  weishaupt_oel_jahr:
+    source: sensor.weishaupt_olzahler
+    cycle: yearly
+    unique_id: weishaupt_oel_jahr
+  weishaupt_starts_tag:
+    source: sensor.weishaupt_brennerstarts
+    cycle: daily
+    unique_id: weishaupt_starts_tag
+  weishaupt_starts_monat:
+    source: sensor.weishaupt_brennerstarts
+    cycle: monthly
+    unique_id: weishaupt_starts_monat
+  weishaupt_starts_jahr:
+    source: sensor.weishaupt_brennerstarts
+    cycle: yearly
+    unique_id: weishaupt_starts_jahr
+
+# --- Laufzeiten aus dem Flammensignal (History-Statistik, Auflösung ca. 30 s) ---
+# Gesamt = Flamme an; Heizung / Warmwasser = Flamme an UND jeweilige Betriebsart
+sensor:
+  - platform: history_stats
+    name: "Weishaupt Laufzeit Brenner Heute"
+    unique_id: weishaupt_laufzeit_brenner_heute
+    entity_id: binary_sensor.weishaupt_flamme
+    state: "on"
+    type: time
+    start: "{{ now().replace(hour=0, minute=0, second=0, microsecond=0) }}"
+    end: "{{ now() }}"
+  - platform: history_stats
+    name: "Weishaupt Laufzeit Brenner Monat"
+    unique_id: weishaupt_laufzeit_brenner_monat
+    entity_id: binary_sensor.weishaupt_flamme
+    state: "on"
+    type: time
+    start: "{{ now().replace(day=1, hour=0, minute=0, second=0, microsecond=0) }}"
+    end: "{{ now() }}"
+  - platform: history_stats
+    name: "Weishaupt Laufzeit Brenner Jahr"
+    unique_id: weishaupt_laufzeit_brenner_jahr
+    entity_id: binary_sensor.weishaupt_flamme
+    state: "on"
+    type: time
+    start: "{{ now().replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0) }}"
+    end: "{{ now() }}"
+
+  - platform: history_stats
+    name: "Weishaupt Laufzeit Heizung Heute"
+    unique_id: weishaupt_laufzeit_heizung_heute
+    entity_id: binary_sensor.weishaupt_brenner_heizung
+    state: "on"
+    type: time
+    start: "{{ now().replace(hour=0, minute=0, second=0, microsecond=0) }}"
+    end: "{{ now() }}"
+  - platform: history_stats
+    name: "Weishaupt Laufzeit Heizung Monat"
+    unique_id: weishaupt_laufzeit_heizung_monat
+    entity_id: binary_sensor.weishaupt_brenner_heizung
+    state: "on"
+    type: time
+    start: "{{ now().replace(day=1, hour=0, minute=0, second=0, microsecond=0) }}"
+    end: "{{ now() }}"
+  - platform: history_stats
+    name: "Weishaupt Laufzeit Heizung Jahr"
+    unique_id: weishaupt_laufzeit_heizung_jahr
+    entity_id: binary_sensor.weishaupt_brenner_heizung
+    state: "on"
+    type: time
+    start: "{{ now().replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0) }}"
+    end: "{{ now() }}"
+
+  - platform: history_stats
+    name: "Weishaupt Laufzeit Warmwasser Heute"
+    unique_id: weishaupt_laufzeit_warmwasser_heute
+    entity_id: binary_sensor.weishaupt_brenner_warmwasser
+    state: "on"
+    type: time
+    start: "{{ now().replace(hour=0, minute=0, second=0, microsecond=0) }}"
+    end: "{{ now() }}"
+  - platform: history_stats
+    name: "Weishaupt Laufzeit Warmwasser Monat"
+    unique_id: weishaupt_laufzeit_warmwasser_monat
+    entity_id: binary_sensor.weishaupt_brenner_warmwasser
+    state: "on"
+    type: time
+    start: "{{ now().replace(day=1, hour=0, minute=0, second=0, microsecond=0) }}"
+    end: "{{ now() }}"
+  - platform: history_stats
+    name: "Weishaupt Laufzeit Warmwasser Jahr"
+    unique_id: weishaupt_laufzeit_warmwasser_jahr
+    entity_id: binary_sensor.weishaupt_brenner_warmwasser
+    state: "on"
+    type: time
+    start: "{{ now().replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0) }}"
+    end: "{{ now() }}"
+
+  - platform: history_stats
+    name: "Weishaupt Stufe 2 Zeit Heute"
+    unique_id: weishaupt_stufe_2_zeit_heute
+    entity_id: binary_sensor.weishaupt_brenner_stufe_2
+    state: "on"
+    type: time
+    start: "{{ now().replace(hour=0, minute=0, second=0, microsecond=0) }}"
+    end: "{{ now() }}"
+  - platform: history_stats
+    name: "Weishaupt Stufe 2 Zeit Monat"
+    unique_id: weishaupt_stufe_2_zeit_monat
+    entity_id: binary_sensor.weishaupt_brenner_stufe_2
+    state: "on"
+    type: time
+    start: "{{ now().replace(day=1, hour=0, minute=0, second=0, microsecond=0) }}"
+    end: "{{ now() }}"
+  - platform: history_stats
+    name: "Weishaupt Stufe 2 Zeit Jahr"
+    unique_id: weishaupt_stufe_2_zeit_jahr
+    entity_id: binary_sensor.weishaupt_brenner_stufe_2
+    state: "on"
+    type: time
+    start: "{{ now().replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0) }}"
+    end: "{{ now() }}"
+
+# --- Abgeleitete Werte ---
+# Alle Laufzeiten in Stunden.
+# Stufe 2 = gemessene Zeit, in der Flamme UND Magnetventil 2 aktiv sind (Auflösung = Abfrageintervall)
+# Stufe 1 = Brennerlaufzeit - Stufe 2
+# Ø Laufzeit pro Start = Brennerlaufzeit / Brennerstarts (Takt-Indikator)
+template:
+  - binary_sensor:
+      - name: "Weishaupt Brenner Heizung"
+        unique_id: weishaupt_brenner_heizung
+        state: "{{ is_state('binary_sensor.weishaupt_flamme', 'on') and is_state('binary_sensor.weishaupt_heizung', 'on') }}"
+      - name: "Weishaupt Brenner Stufe 2"
+        unique_id: weishaupt_brenner_stufe_2
+        state: "{{ is_state('binary_sensor.weishaupt_flamme', 'on') and is_state('binary_sensor.weishaupt_magnetventil_2', 'on') }}"
+      - name: "Weishaupt Brenner Warmwasser"
+        unique_id: weishaupt_brenner_warmwasser
+        state: "{{ is_state('binary_sensor.weishaupt_flamme', 'on') and is_state('binary_sensor.weishaupt_warmwasser', 'on') }}"
+
+  - sensor:
+      # Klartext aus Flamme, Betriebsart (Dreiwegeventil) und Magnetventil 2
+      - name: "Weishaupt Betriebsart"
+        unique_id: weishaupt_betriebsart
+        icon: mdi:fire-circle
+        state: >-
+          {%- if is_state('binary_sensor.weishaupt_flamme', 'on') -%}
+            {%- if is_state('binary_sensor.weishaupt_warmwasser', 'on') -%}Warmwasser
+            {%- elif is_state('binary_sensor.weishaupt_heizung', 'on') -%}Heizung
+            {%- else -%}Brenner{%- endif -%}
+            , Stufe {{ 2 if is_state('binary_sensor.weishaupt_magnetventil_2', 'on') else 1 }}
+          {%- else -%}Brenner aus{%- endif -%}
+
+      # Betriebsphase (i10) laut Anleitung im Klartext
+      - name: "Weishaupt Betriebsphase Text"
+        unique_id: weishaupt_betriebsphase_text
+        icon: mdi:progress-clock
+        availability: "{{ has_value('sensor.weishaupt_betriebsphase') }}"
+        state: >-
+          {{ {0: 'Bereitschaft', 1: 'Ruhestandskontrolle', 2: 'Ölvorwärmung', 3: 'Vorbelüftung',
+              4: 'Sicherheitszeit', 5: 'Nachzündung', 6: 'Flammenstabilisierung',
+              7: 'Reglerfreigabe', 8: 'Nachbelüftung', 9: 'Zwangsbelüftung'}
+              .get(states('sensor.weishaupt_betriebsphase') | int(0), 'unbekannt') }}
+
+      # Wärmeanforderung je nach aktiver Betriebsart (Dreiwegeventil):
+      # Warmwasser aktiv -> Sollwert Warmwasser, Heizung aktiv -> Sollwert Heizen
+      - name: "Weishaupt Sollwert Heizen"
+        unique_id: weishaupt_sollwert_heizen
+        unit_of_measurement: "°C"
+        device_class: temperature
+        state_class: measurement
+        availability: >-
+          {{ has_value('sensor.weishaupt_warmeanforderung')
+             and is_state('binary_sensor.weishaupt_heizung', 'on')
+             and is_state('binary_sensor.weishaupt_warmwasser', 'off') }}
+        state: "{{ states('sensor.weishaupt_warmeanforderung') }}"
+      - name: "Weishaupt Sollwert Warmwasser"
+        unique_id: weishaupt_sollwert_warmwasser
+        unit_of_measurement: "°C"
+        device_class: temperature
+        state_class: measurement
+        availability: >-
+          {{ has_value('sensor.weishaupt_warmeanforderung')
+             and is_state('binary_sensor.weishaupt_warmwasser', 'on') }}
+        state: "{{ states('sensor.weishaupt_warmeanforderung') }}"
+
+      # Vorlauf mit Sollwert der gerade aktiven Betriebsart (Dashboard-Kachel "Vorlauf")
+      - name: "Weishaupt Anzeige Vorlauf"
+        unique_id: weishaupt_anzeige_vorlauf
+        icon: mdi:radiator
+        availability: "{{ has_value('sensor.weishaupt_vorlauftemperatur') }}"
+        state: >-
+          {% set ist = states('sensor.weishaupt_vorlauftemperatur') | float(0) | round(1) | string | replace('.', ',') %}
+          {% set soll = states('sensor.weishaupt_warmeanforderung') %}
+          {% if is_number(soll) and (is_state('binary_sensor.weishaupt_warmwasser', 'on') or is_state('binary_sensor.weishaupt_heizung', 'on')) %}
+          {{ ist }} → {{ soll | float | round(1) | string | replace('.', ',') }} °C
+          {%- else -%}{{ ist }} °C{%- endif %}
+        attributes:
+          modus: >-
+            {{ 'Warmwasser' if is_state('binary_sensor.weishaupt_warmwasser', 'on')
+               else ('Heizen' if is_state('binary_sensor.weishaupt_heizung', 'on') else '') }}
+
+      - name: "Weishaupt Stufe 1 Laufzeit heute"
+        unique_id: weishaupt_stufe_1_laufzeit_heute
+        unit_of_measurement: "h"
+        state: >-
+          {% set gesamt = states('sensor.weishaupt_laufzeit_brenner_heute') | float(0) %}
+          {% set s2 = states('sensor.weishaupt_stufe_2_zeit_heute') | float(0) %}
+          {{ [gesamt - s2, 0] | max | round(2) }}
+      - name: "Weishaupt Stufe 1 Laufzeit Monat"
+        unique_id: weishaupt_stufe_1_laufzeit_monat
+        unit_of_measurement: "h"
+        state: >-
+          {% set gesamt = states('sensor.weishaupt_laufzeit_brenner_monat') | float(0) %}
+          {% set s2 = states('sensor.weishaupt_stufe_2_zeit_monat') | float(0) %}
+          {{ [gesamt - s2, 0] | max | round(2) }}
+      - name: "Weishaupt Stufe 1 Laufzeit Jahr"
+        unique_id: weishaupt_stufe_1_laufzeit_jahr
+        unit_of_measurement: "h"
+        state: >-
+          {% set gesamt = states('sensor.weishaupt_laufzeit_brenner_jahr') | float(0) %}
+          {% set s2 = states('sensor.weishaupt_stufe_2_zeit_jahr') | float(0) %}
+          {{ [gesamt - s2, 0] | max | round(2) }}
+
+      - name: "Weishaupt Laufzeit pro Start heute"
+        unique_id: weishaupt_laufzeit_pro_start_heute
+        unit_of_measurement: "h"
+        availability: "{{ states('sensor.weishaupt_starts_tag') | float(0) > 0 }}"
+        state: >-
+          {{ (states('sensor.weishaupt_laufzeit_brenner_heute') | float(0)
+              / states('sensor.weishaupt_starts_tag') | float(1)) | round(2) }}
+      - name: "Weishaupt Laufzeit pro Start Monat"
+        unique_id: weishaupt_laufzeit_pro_start_monat
+        unit_of_measurement: "h"
+        availability: "{{ states('sensor.weishaupt_starts_monat') | float(0) > 0 }}"
+        state: >-
+          {{ (states('sensor.weishaupt_laufzeit_brenner_monat') | float(0)
+              / states('sensor.weishaupt_starts_monat') | float(1)) | round(2) }}
+      - name: "Weishaupt Laufzeit pro Start Jahr"
+        unique_id: weishaupt_laufzeit_pro_start_jahr
+        unit_of_measurement: "h"
+        availability: "{{ states('sensor.weishaupt_starts_jahr') | float(0) > 0 }}"
+        state: >-
+          {{ (states('sensor.weishaupt_laufzeit_brenner_jahr') | float(0)
+              / states('sensor.weishaupt_starts_jahr') | float(1)) | round(2) }}
+
+  # Anzeige-Sensoren: dieselben Laufzeiten als Text "X h YY min" (nur für das Dashboard;
+  # gerechnet wird weiter mit den Stunden-Sensoren oben).
+  - sensor:
+      - name: "Weishaupt Anzeige Laufzeit gesamt Heute"
+        unique_id: weishaupt_anzeige_laufzeit_gesamt_heute
+        icon: mdi:timer-outline
+        state: "{%- macro hm(e) -%}{%- if has_value(e) -%}{%- set m = ((states(e) | float(0)) * 60) | round(0) | int -%}{{ m // 60 }} h {{ '%02d' % (m % 60) }} min{%- else -%}–{%- endif -%}{%- endmacro -%}{{ hm('sensor.weishaupt_laufzeit_brenner_heute') }}"
+      - name: "Weishaupt Anzeige Laufzeit gesamt Monat"
+        unique_id: weishaupt_anzeige_laufzeit_gesamt_monat
+        icon: mdi:timer-outline
+        state: "{%- macro hm(e) -%}{%- if has_value(e) -%}{%- set m = ((states(e) | float(0)) * 60) | round(0) | int -%}{{ m // 60 }} h {{ '%02d' % (m % 60) }} min{%- else -%}–{%- endif -%}{%- endmacro -%}{{ hm('sensor.weishaupt_laufzeit_brenner_monat') }}"
+      - name: "Weishaupt Anzeige Laufzeit gesamt Jahr"
+        unique_id: weishaupt_anzeige_laufzeit_gesamt_jahr
+        icon: mdi:timer-outline
+        state: "{%- macro hm(e) -%}{%- if has_value(e) -%}{%- set m = ((states(e) | float(0)) * 60) | round(0) | int -%}{{ m // 60 }} h {{ '%02d' % (m % 60) }} min{%- else -%}–{%- endif -%}{%- endmacro -%}{{ hm('sensor.weishaupt_laufzeit_brenner_jahr') }}"
+      - name: "Weishaupt Anzeige Heizung Heute"
+        unique_id: weishaupt_anzeige_heizung_heute
+        icon: mdi:radiator
+        state: "{%- macro hm(e) -%}{%- if has_value(e) -%}{%- set m = ((states(e) | float(0)) * 60) | round(0) | int -%}{{ m // 60 }} h {{ '%02d' % (m % 60) }} min{%- else -%}–{%- endif -%}{%- endmacro -%}{{ hm('sensor.weishaupt_laufzeit_heizung_heute') }}"
+      - name: "Weishaupt Anzeige Heizung Monat"
+        unique_id: weishaupt_anzeige_heizung_monat
+        icon: mdi:radiator
+        state: "{%- macro hm(e) -%}{%- if has_value(e) -%}{%- set m = ((states(e) | float(0)) * 60) | round(0) | int -%}{{ m // 60 }} h {{ '%02d' % (m % 60) }} min{%- else -%}–{%- endif -%}{%- endmacro -%}{{ hm('sensor.weishaupt_laufzeit_heizung_monat') }}"
+      - name: "Weishaupt Anzeige Heizung Jahr"
+        unique_id: weishaupt_anzeige_heizung_jahr
+        icon: mdi:radiator
+        state: "{%- macro hm(e) -%}{%- if has_value(e) -%}{%- set m = ((states(e) | float(0)) * 60) | round(0) | int -%}{{ m // 60 }} h {{ '%02d' % (m % 60) }} min{%- else -%}–{%- endif -%}{%- endmacro -%}{{ hm('sensor.weishaupt_laufzeit_heizung_jahr') }}"
+      - name: "Weishaupt Anzeige Warmwasser Heute"
+        unique_id: weishaupt_anzeige_warmwasser_heute
+        icon: mdi:water-boiler
+        state: "{%- macro hm(e) -%}{%- if has_value(e) -%}{%- set m = ((states(e) | float(0)) * 60) | round(0) | int -%}{{ m // 60 }} h {{ '%02d' % (m % 60) }} min{%- else -%}–{%- endif -%}{%- endmacro -%}{{ hm('sensor.weishaupt_laufzeit_warmwasser_heute') }}"
+      - name: "Weishaupt Anzeige Warmwasser Monat"
+        unique_id: weishaupt_anzeige_warmwasser_monat
+        icon: mdi:water-boiler
+        state: "{%- macro hm(e) -%}{%- if has_value(e) -%}{%- set m = ((states(e) | float(0)) * 60) | round(0) | int -%}{{ m // 60 }} h {{ '%02d' % (m % 60) }} min{%- else -%}–{%- endif -%}{%- endmacro -%}{{ hm('sensor.weishaupt_laufzeit_warmwasser_monat') }}"
+      - name: "Weishaupt Anzeige Warmwasser Jahr"
+        unique_id: weishaupt_anzeige_warmwasser_jahr
+        icon: mdi:water-boiler
+        state: "{%- macro hm(e) -%}{%- if has_value(e) -%}{%- set m = ((states(e) | float(0)) * 60) | round(0) | int -%}{{ m // 60 }} h {{ '%02d' % (m % 60) }} min{%- else -%}–{%- endif -%}{%- endmacro -%}{{ hm('sensor.weishaupt_laufzeit_warmwasser_jahr') }}"
+      - name: "Weishaupt Anzeige Stufe 1 Heute"
+        unique_id: weishaupt_anzeige_stufe_1_heute
+        icon: mdi:numeric-1-circle-outline
+        state: "{%- macro hm(e) -%}{%- if has_value(e) -%}{%- set m = ((states(e) | float(0)) * 60) | round(0) | int -%}{{ m // 60 }} h {{ '%02d' % (m % 60) }} min{%- else -%}–{%- endif -%}{%- endmacro -%}{{ hm('sensor.weishaupt_stufe_1_laufzeit_heute') }}"
+      - name: "Weishaupt Anzeige Stufe 1 Monat"
+        unique_id: weishaupt_anzeige_stufe_1_monat
+        icon: mdi:numeric-1-circle-outline
+        state: "{%- macro hm(e) -%}{%- if has_value(e) -%}{%- set m = ((states(e) | float(0)) * 60) | round(0) | int -%}{{ m // 60 }} h {{ '%02d' % (m % 60) }} min{%- else -%}–{%- endif -%}{%- endmacro -%}{{ hm('sensor.weishaupt_stufe_1_laufzeit_monat') }}"
+      - name: "Weishaupt Anzeige Stufe 1 Jahr"
+        unique_id: weishaupt_anzeige_stufe_1_jahr
+        icon: mdi:numeric-1-circle-outline
+        state: "{%- macro hm(e) -%}{%- if has_value(e) -%}{%- set m = ((states(e) | float(0)) * 60) | round(0) | int -%}{{ m // 60 }} h {{ '%02d' % (m % 60) }} min{%- else -%}–{%- endif -%}{%- endmacro -%}{{ hm('sensor.weishaupt_stufe_1_laufzeit_jahr') }}"
+      - name: "Weishaupt Anzeige Stufe 2 Heute"
+        unique_id: weishaupt_anzeige_stufe_2_heute
+        icon: mdi:numeric-2-circle-outline
+        state: "{%- macro hm(e) -%}{%- if has_value(e) -%}{%- set m = ((states(e) | float(0)) * 60) | round(0) | int -%}{{ m // 60 }} h {{ '%02d' % (m % 60) }} min{%- else -%}–{%- endif -%}{%- endmacro -%}{{ hm('sensor.weishaupt_stufe_2_zeit_heute') }}"
+      - name: "Weishaupt Anzeige Stufe 2 Monat"
+        unique_id: weishaupt_anzeige_stufe_2_monat
+        icon: mdi:numeric-2-circle-outline
+        state: "{%- macro hm(e) -%}{%- if has_value(e) -%}{%- set m = ((states(e) | float(0)) * 60) | round(0) | int -%}{{ m // 60 }} h {{ '%02d' % (m % 60) }} min{%- else -%}–{%- endif -%}{%- endmacro -%}{{ hm('sensor.weishaupt_stufe_2_zeit_monat') }}"
+      - name: "Weishaupt Anzeige Stufe 2 Jahr"
+        unique_id: weishaupt_anzeige_stufe_2_jahr
+        icon: mdi:numeric-2-circle-outline
+        state: "{%- macro hm(e) -%}{%- if has_value(e) -%}{%- set m = ((states(e) | float(0)) * 60) | round(0) | int -%}{{ m // 60 }} h {{ '%02d' % (m % 60) }} min{%- else -%}–{%- endif -%}{%- endmacro -%}{{ hm('sensor.weishaupt_stufe_2_zeit_jahr') }}"
+      - name: "Weishaupt Anzeige Pro Start Heute"
+        unique_id: weishaupt_anzeige_pro_start_heute
+        icon: mdi:timer-sand
+        state: "{%- macro hm(e) -%}{%- if has_value(e) -%}{%- set m = ((states(e) | float(0)) * 60) | round(0) | int -%}{{ m // 60 }} h {{ '%02d' % (m % 60) }} min{%- else -%}–{%- endif -%}{%- endmacro -%}{{ hm('sensor.weishaupt_laufzeit_pro_start_heute') }}"
+      - name: "Weishaupt Anzeige Pro Start Monat"
+        unique_id: weishaupt_anzeige_pro_start_monat
+        icon: mdi:timer-sand
+        state: "{%- macro hm(e) -%}{%- if has_value(e) -%}{%- set m = ((states(e) | float(0)) * 60) | round(0) | int -%}{{ m // 60 }} h {{ '%02d' % (m % 60) }} min{%- else -%}–{%- endif -%}{%- endmacro -%}{{ hm('sensor.weishaupt_laufzeit_pro_start_monat') }}"
+      - name: "Weishaupt Anzeige Pro Start Jahr"
+        unique_id: weishaupt_anzeige_pro_start_jahr
+        icon: mdi:timer-sand
+        state: "{%- macro hm(e) -%}{%- if has_value(e) -%}{%- set m = ((states(e) | float(0)) * 60) | round(0) | int -%}{{ m // 60 }} h {{ '%02d' % (m % 60) }} min{%- else -%}–{%- endif -%}{%- endmacro -%}{{ hm('sensor.weishaupt_laufzeit_pro_start_jahr') }}"
+      - name: "Weishaupt Anzeige Letzter Lauf"
+        unique_id: weishaupt_anzeige_letzter_lauf
+        icon: mdi:history
+        state: "{%- macro hm(e) -%}{%- if has_value(e) -%}{%- set m = ((states(e) | float(0)) * 60) | round(0) | int -%}{{ m // 60 }} h {{ '%02d' % (m % 60) }} min{%- else -%}–{%- endif -%}{%- endmacro -%}{{ hm('sensor.weishaupt_laufzeit_letzter_brennerlauf') }}"
+
+  # Dauer jedes einzelnen Brennerlaufs (wird beim Ausgehen der Flamme gesetzt)
+  - trigger:
+      - trigger: state
+        entity_id: binary_sensor.weishaupt_flamme
+        from: "on"
+        to: "off"
+    sensor:
+      - name: "Weishaupt Laufzeit letzter Brennerlauf"
+        unique_id: weishaupt_laufzeit_letzter_brennerlauf
+        unit_of_measurement: "h"
+        state: "{{ ((trigger.to_state.last_changed - trigger.from_state.last_changed).total_seconds() / 3600) | round(2) }}"
+        attributes:
+          aussentemperatur: "{{ states('sensor.weishaupt_aussentemperatur') }}"
+          betriebsart: "{{ states('sensor.weishaupt_betriebsart') }}"
+
+  # Laufzeit je Brennerlauf in Minuten, getrennt nach Heizung und Warmwasser (für das Schaubild "Takten").
+  # Der Wert steht beim Ausgehen der Flamme (id: ende) und fällt 2 Minuten später (id: reset)
+  # bzw. beim nächsten Start wieder auf 0. So entsteht im Schaubild je Lauf genau ein Balken.
+  - trigger:
+      - trigger: state
+        entity_id: binary_sensor.weishaupt_flamme
+        from: "on"
+        to: "off"
+        id: ende
+      - trigger: state
+        entity_id: binary_sensor.weishaupt_flamme
+        to: "off"
+        for: "00:02:00"
+        id: reset
+      - trigger: state
+        entity_id: binary_sensor.weishaupt_flamme
+        to: "on"
+        id: start
+    sensor:
+      - name: "Weishaupt Lauf Heizung Minuten"
+        unique_id: weishaupt_lauf_heizung_minuten
+        unit_of_measurement: "min"
+        state_class: measurement
+        state: >-
+          {% if trigger.id == 'ende' and is_state('binary_sensor.weishaupt_warmwasser', 'off') %}
+            {{ ((trigger.to_state.last_changed - trigger.from_state.last_changed).total_seconds() / 60) | round(1) }}
+          {% else %}0{% endif %}
+      - name: "Weishaupt Lauf Warmwasser Minuten"
+        unique_id: weishaupt_lauf_warmwasser_minuten
+        unit_of_measurement: "min"
+        state_class: measurement
+        state: >-
+          {% if trigger.id == 'ende' and is_state('binary_sensor.weishaupt_warmwasser', 'on') %}
+            {{ ((trigger.to_state.last_changed - trigger.from_state.last_changed).total_seconds() / 60) | round(1) }}
+          {% else %}0{% endif %}
+
+# --- Zählerstände aus Tausender + Rest ---
+# ebusd liest beide Teile nacheinander. Beim Übertrag (z. B. 19 999 -> 20 000) kann kurz ein Teil
+# alt und einer neu sein; Sprünge über 500 werden deshalb um 1000 korrigiert. Die Zähler steigen
+# real nur langsam (Öl < 3 L/h), echte Sprünge dieser Größe gibt es nicht.
+  - trigger:
+      - trigger: state
+        entity_id: [sensor.weishaupt_oel_tausender, sensor.weishaupt_oel_rest]
+    sensor:
+      - name: "Weishaupt Ölzähler"
+        unique_id: weishaupt_ebus_oelzaehler
+        default_entity_id: sensor.weishaupt_olzahler
+        unit_of_measurement: "L"
+        device_class: volume
+        state_class: total_increasing
+        state: &zaehler >-
+          {% set t = states(trigger.entity_id | replace('_rest', '_tausender')) %}
+          {% set r = states(trigger.entity_id | replace('_tausender', '_rest')) %}
+          {% if is_number(t) and is_number(r) %}
+            {% set neu = (t | int) * 1000 + (r | int) %}
+            {% set alt = this.state | int(neu) %}
+            {% if neu < alt - 500 %}{{ neu + 1000 }}{% elif neu > alt + 500 and alt > 0 %}{{ neu - 1000 }}{% else %}{{ neu }}{% endif %}
+          {% else %}{{ this.state }}{% endif %}
+  - trigger:
+      - trigger: state
+        entity_id: [sensor.weishaupt_bstd_tausender, sensor.weishaupt_bstd_rest]
+    sensor:
+      - name: "Weishaupt Betriebsstunden Brenner"
+        unique_id: weishaupt_ebus_betriebsstunden_brenner
+        default_entity_id: sensor.weishaupt_betriebsstunden_brenner
+        unit_of_measurement: "h"
+        device_class: duration
+        state_class: total_increasing
+        state: *zaehler
+  - trigger:
+      - trigger: state
+        entity_id: [sensor.weishaupt_starts_tausender, sensor.weishaupt_starts_rest]
+    sensor:
+      - name: "Weishaupt Brennerstarts"
+        unique_id: weishaupt_ebus_brennerstarts
+        default_entity_id: sensor.weishaupt_brennerstarts
+        unit_of_measurement: "Starts"
+        state_class: total_increasing
+        state: *zaehler

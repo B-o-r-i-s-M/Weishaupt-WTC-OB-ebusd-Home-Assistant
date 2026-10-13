@@ -1,0 +1,182 @@
+# Dashboard-Ansicht "eBUS" – Ersatz für die Weboberfläche des WCM-COM
+# Einfügen: Dashboard bearbeiten -> Ansicht hinzufügen -> ⋮ -> "In YAML bearbeiten" -> Inhalt einfügen.
+# Nutzt nur Standardkarten (keine HACS-Abhängigkeiten).
+type: sections
+title: eBUS
+path: ebus
+icon: mdi:transit-connection-variant
+max_columns: 3
+sections:
+  - type: grid
+    cards:
+      - type: heading
+        heading: Brenner (Prozesswerte)
+        icon: mdi:fire
+      - type: tile
+        entity: sensor.weishaupt_betriebsart
+        name: Betriebsart
+        icon: mdi:fire-circle
+        color: red
+        grid_options: {columns: 12}
+      - type: tile
+        entity: binary_sensor.weishaupt_flamme
+        name: Flamme
+        color: red
+        grid_options: {columns: 6}
+      - type: tile
+        entity: sensor.weishaupt_betriebsphase_text
+        name: Betriebsphase
+        color: amber
+        grid_options: {columns: 6}
+      - type: tile
+        entity: binary_sensor.weishaupt_magnetventil_1
+        name: Stufe 1 (MV 1)
+        icon: mdi:numeric-1-circle-outline
+        color: amber
+        grid_options: {columns: 6}
+      - type: tile
+        entity: binary_sensor.weishaupt_magnetventil_2
+        name: Stufe 2 (MV 2)
+        icon: mdi:numeric-2-circle-outline
+        color: amber
+        grid_options: {columns: 6}
+      - type: tile
+        entity: binary_sensor.weishaupt_heizung
+        name: Betriebsart Heizung
+        color: amber
+        grid_options: {columns: 6}
+      - type: tile
+        entity: binary_sensor.weishaupt_warmwasser
+        name: Betriebsart Warmwasser
+        color: amber
+        grid_options: {columns: 6}
+      - type: tile
+        entity: binary_sensor.weishaupt_pumpe
+        name: Kesselpumpe
+        color: amber
+        grid_options: {columns: 6}
+      - type: tile
+        entity: sensor.weishaupt_laststellung
+        name: Laststellung
+        icon: mdi:gauge
+        color: amber
+        grid_options: {columns: 6}
+      - type: tile
+        entity: sensor.weishaupt_stoerung
+        name: Störcode
+        color: red
+        grid_options: {columns: 12}
+  - type: grid
+    cards:
+      - type: heading
+        heading: Temperaturen
+        icon: mdi:thermometer
+      - type: tile
+        entity: sensor.weishaupt_vorlauftemperatur
+        name: Vorlauf (i30)
+        color: red
+        grid_options: {columns: 6}
+      - type: tile
+        entity: sensor.weishaupt_warmeanforderung
+        name: Wärmeanforderung
+        icon: mdi:target
+        color: red
+        grid_options: {columns: 6}
+      - type: tile
+        entity: sensor.weishaupt_warmwassertemperatur
+        name: Warmwasser (i34)
+        icon: mdi:water-thermometer
+        color: red
+        grid_options: {columns: 6}
+      - type: tile
+        entity: sensor.weishaupt_regler_wwsoll
+        name: Warmwasser-Soll (Regler)
+        icon: mdi:target
+        color: red
+        grid_options: {columns: 6}
+      - type: tile
+        entity: sensor.weishaupt_aussentemperatur
+        name: Außen (i33)
+        color: amber
+        grid_options: {columns: 6}
+      - type: tile
+        entity: sensor.weishaupt_aussentemperatur_gedaempft
+        name: Außen gedämpft
+        color: amber
+        grid_options: {columns: 6}
+      - type: tile
+        entity: sensor.weishaupt_abgastemperatur
+        name: Abgas
+        icon: mdi:smoke
+        color: amber
+        grid_options: {columns: 6}
+      - type: tile
+        entity: sensor.weishaupt_hk1_vorlauf_soll
+        name: Vorlauf-Soll HK1
+        icon: mdi:target
+        color: amber
+        grid_options: {columns: 6}
+      - type: heading
+        heading: Zähler
+        icon: mdi:counter
+      - type: tile
+        entity: sensor.weishaupt_olzahler
+        name: Ölzähler
+        icon: mdi:oil
+        color: amber
+        grid_options: {columns: 6}
+      - type: tile
+        entity: sensor.weishaupt_betriebsstunden_brenner
+        name: Betriebsstunden
+        color: amber
+        grid_options: {columns: 6}
+      - type: tile
+        entity: sensor.weishaupt_brennerstarts
+        name: Brennerstarts
+        icon: mdi:restart
+        color: amber
+        grid_options: {columns: 6}
+      - type: tile
+        entity: sensor.weishaupt_zeit_seit_wartung
+        name: Zeit seit Wartung
+        color: amber
+        grid_options: {columns: 6}
+  - type: grid
+    cards:
+      - type: heading
+        heading: Heizkreis 1 – Parameter
+        icon: mdi:tune
+      - type: entities
+        entities:
+          - entity: input_number.weishaupt_set_raumsoll
+            name: Normal-Raumtemp. (112)
+          - entity: input_number.weishaupt_set_raumsoll_absenk
+            name: Absenk-Raumtemp. (113)
+          - entity: input_number.weishaupt_set_steilheit
+            name: Steilheit (117)
+          - entity: input_number.weishaupt_set_raumfrost
+            name: Raumfrosttemp. (118)
+          - entity: input_number.weishaupt_set_sowi
+            name: So/Wi-Umschaltung (119)
+          - entity: input_number.weishaupt_set_ww_soll
+            name: Warmwasser-Soll (132)
+          - entity: input_number.weishaupt_set_ww_soll_absenk
+            name: WW-Soll abgesenkt (133)
+      - type: markdown
+        content: >-
+          Regler verstellen → der Wert wird per eBUS an den WCM-FS gesendet und nach
+          ca. 8 s nachgelesen. Springt der Regler zurück, wurde der Wert nicht übernommen.
+      - type: heading
+        heading: eBUS
+        icon: mdi:transit-connection-variant
+      - type: tile
+        entity: binary_sensor.heating_ebusd_global_signal
+        name: eBUS-Signal
+        icon: mdi:sine-wave
+        color: green
+        grid_options: {columns: 6}
+      - type: tile
+        entity: binary_sensor.heating_ebusd_global_running
+        name: ebusd läuft
+        color: green
+        grid_options: {columns: 6}

@@ -1,0 +1,142 @@
+# Weishaupt Heizkreis 1 – Parameter ändern über eBUS (Ersatz für die WCM-COM-Weboberfläche)
+# Projekt: https://github.com/B-o-r-i-s-M/Weishaupt-WTC-OB-ebusd-Home-Assistant
+# Ablauf: Schieberegler verstellen -> Automation sendet das passende Schreibtelegramm
+#   (ebusd/hk1/Set<Name>_<Wert*10>/set, definiert in ebusd/weishaupt-wtc.csv)
+#   und liest den Wert 3 s später zur Kontrolle nach. Der Regler folgt immer dem gelesenen Ist-Wert,
+#   d. h. springt er zurück, hat der WCM-FS die Änderung nicht übernommen.
+# Voraussetzung: ebusd läuft mit --address=ff, das WCM-COM ist vom Bus getrennt.
+
+input_number:
+  weishaupt_set_raumsoll:
+    name: "Weishaupt Normal-Raumtemperatur (112)"
+    min: 10
+    max: 30
+    step: 0.5
+    mode: slider
+    icon: mdi:home-thermometer
+    unit_of_measurement: "°C"
+  weishaupt_set_raumsoll_absenk:
+    name: "Weishaupt Absenk-Raumtemperatur (113)"
+    min: 10
+    max: 30
+    step: 0.5
+    mode: slider
+    icon: mdi:home-thermometer-outline
+    unit_of_measurement: "°C"
+  weishaupt_set_steilheit:
+    name: "Weishaupt Heizkurve Steilheit (117)"
+    min: 2.5
+    max: 40
+    step: 0.5
+    mode: slider
+    icon: mdi:chart-line
+  weishaupt_set_raumfrost:
+    name: "Weishaupt Raumfrosttemperatur (118)"
+    min: 0
+    max: 15
+    step: 0.5
+    mode: slider
+    icon: mdi:snowflake-thermometer
+    unit_of_measurement: "°C"
+  weishaupt_set_sowi:
+    name: "Weishaupt Sommer/Winter-Umschaltung (119)"
+    min: 5
+    max: 30
+    step: 0.5
+    mode: slider
+    icon: mdi:sun-snowflake-variant
+    unit_of_measurement: "°C"
+  weishaupt_set_ww_soll:
+    name: "Weishaupt Warmwasser-Soll (132)"
+    min: 30
+    max: 65
+    step: 0.5
+    mode: slider
+    icon: mdi:water-boiler
+    unit_of_measurement: "°C"
+  weishaupt_set_ww_soll_absenk:
+    name: "Weishaupt Warmwasser-Soll abgesenkt (133)"
+    min: 10
+    max: 65
+    step: 0.5
+    mode: slider
+    icon: mdi:water-boiler-off
+    unit_of_measurement: "°C"
+
+automation:
+  # Nutzer verstellt einen Regler -> Telegramm senden und nachlesen
+  - id: weishaupt_hk1_parameter_schreiben
+    alias: Weishaupt HK1 Parameter schreiben
+    description: Sendet geänderte Heizkreis-Parameter über ebusd an den WCM-FS
+    mode: queued
+    triggers:
+      - trigger: state
+        entity_id: [input_number.weishaupt_set_raumsoll, input_number.weishaupt_set_raumsoll_absenk, input_number.weishaupt_set_steilheit, input_number.weishaupt_set_raumfrost, input_number.weishaupt_set_sowi, input_number.weishaupt_set_ww_soll, input_number.weishaupt_set_ww_soll_absenk]
+    conditions:
+      # nur Änderungen durch einen Benutzer (nicht die Rück-Synchronisierung unten)
+      - condition: template
+        value_template: "{{ trigger.to_state.context.user_id is not none }}"
+      - condition: template
+        value_template: >-
+          {{ is_number(trigger.to_state.state)
+             and (trigger.to_state.state | float) != (states(map[trigger.entity_id][1]) | float(-999)) }}
+    variables:
+      map:
+            input_number.weishaupt_set_raumsoll: ['Raumsoll', 'sensor.weishaupt_hk1_raumsoll']
+            input_number.weishaupt_set_raumsoll_absenk: ['RaumsollAbsenk', 'sensor.weishaupt_hk1_raumsoll_absenk']
+            input_number.weishaupt_set_steilheit: ['Steilheit', 'sensor.weishaupt_hk1_steilheit']
+            input_number.weishaupt_set_raumfrost: ['Raumfrosttemp', 'sensor.weishaupt_hk1_raumfrost']
+            input_number.weishaupt_set_sowi: ['SoWiUmschalt', 'sensor.weishaupt_hk1_sowi']
+            input_number.weishaupt_set_ww_soll: ['WWSollNormal', 'sensor.weishaupt_hk1_ww_soll']
+            input_number.weishaupt_set_ww_soll_absenk: ['WWSollAbsenk', 'sensor.weishaupt_hk1_ww_soll_absenk']
+    actions:
+      - variables:
+          name: "{{ map[trigger.entity_id][0] }}"
+          raw: "{{ ((trigger.to_state.state | float) * 10) | round(0) | int }}"
+      - action: mqtt.publish
+        data:
+          topic: "ebusd/hk1/Set{{ name }}_{{ raw }}/set"
+          payload: ""
+      - delay: "00:00:03"
+      - action: mqtt.publish
+        data:
+          topic: "ebusd/hk1/{{ name }}/get"
+          payload: ""
+      - delay: "00:00:05"
+      # Regler auf den tatsächlich gelesenen Wert zurücksetzen (zeigt, ob übernommen)
+      - action: input_number.set_value
+        target:
+          entity_id: "{{ trigger.entity_id }}"
+        data:
+          value: "{{ states(map[trigger.entity_id][1]) | float(trigger.to_state.state | float) }}"
+
+  # Gelesener Wert ändert sich (z. B. am WCM-FS verstellt) -> Regler nachführen
+  - id: weishaupt_hk1_parameter_sync
+    alias: Weishaupt HK1 Parameter synchronisieren
+    description: Führt die Regler den vom WCM-FS gelesenen Werten nach
+    mode: queued
+    triggers:
+      - trigger: state
+        entity_id: [sensor.weishaupt_hk1_raumsoll, sensor.weishaupt_hk1_raumsoll_absenk, sensor.weishaupt_hk1_steilheit, sensor.weishaupt_hk1_raumfrost, sensor.weishaupt_hk1_sowi, sensor.weishaupt_hk1_ww_soll, sensor.weishaupt_hk1_ww_soll_absenk]
+      - trigger: homeassistant
+        event: start
+    variables:
+      map:
+            sensor.weishaupt_hk1_raumsoll: input_number.weishaupt_set_raumsoll
+            sensor.weishaupt_hk1_raumsoll_absenk: input_number.weishaupt_set_raumsoll_absenk
+            sensor.weishaupt_hk1_steilheit: input_number.weishaupt_set_steilheit
+            sensor.weishaupt_hk1_raumfrost: input_number.weishaupt_set_raumfrost
+            sensor.weishaupt_hk1_sowi: input_number.weishaupt_set_sowi
+            sensor.weishaupt_hk1_ww_soll: input_number.weishaupt_set_ww_soll
+            sensor.weishaupt_hk1_ww_soll_absenk: input_number.weishaupt_set_ww_soll_absenk
+    actions:
+      - repeat:
+          for_each: "{{ map | list if trigger.platform == 'homeassistant' else [trigger.entity_id] }}"
+          sequence:
+            - condition: template
+              value_template: "{{ is_number(states(repeat.item)) and states(repeat.item) | float != states(map[repeat.item]) | float(-999) }}"
+            - action: input_number.set_value
+              target:
+                entity_id: "{{ map[repeat.item] }}"
+              data:
+                value: "{{ states(repeat.item) | float }}"
